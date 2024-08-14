@@ -35,20 +35,14 @@ const App = () => {
     setFormula(setter);
   };
 
-  // const clearClick = (all: boolean) => {
-  //   setOutput("0");
-  //   setOperation("");
-  //   setFormula((prev) => {
-  //     if (all) return "";
-  //     else if (lastOpIdx(prev) == -1) return "";
-  //     else return prev.slice(0, lastOpIdx(prev) + 1);
-  //   });
-  // };
-
-  const clearClick = () => {
+  const clearClick = (all: boolean) => {
     setOutput("0");
     setOperation("");
-    setFormula("");
+    setFormula((prev) => {
+      if (all) return "";
+      else if (lastOpIdx(prev) == -1) return "";
+      else return prev.slice(0, lastOpIdx(prev) + 1);
+    });
   };
 
   const deleteClick = () => {
@@ -115,7 +109,7 @@ const App = () => {
             let className = "button";
 
             if (!isNaN(+value) || value == ".") click = () => numClick(value);
-            else if (key == "clear") click = () => clearClick();
+            else if (key == "clear") click = () => clearClick(["0", "-0"].includes(output));
             else if (key == "delete") click = deleteClick;
             else if (key == "sign") click = signClick;
             else if (["add", "subtract", "multiply", "divide"].includes(key))
