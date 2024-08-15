@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import buttonInfo from "./ButtonInfo";
+import buttonInfo from "./ButtonInfo.ts";
+import "../Styles/calculator.css";
 
-const App = () => {
+const Calculator = () => {
   const [output, setOutput] = useState("0");
   const [formula, setFormula] = useState("");
   const [operation, setOperation] = useState("");
@@ -10,7 +11,7 @@ const App = () => {
     const lastIdx = Math.max(
       str.lastIndexOf("+"),
       str.lastIndexOf("-"),
-      str.lastIndexOf("x"),
+      str.lastIndexOf("×"),
       str.lastIndexOf("/")
     );
     return str[str.length - 1] == ")" ? lastIdx - 2 : lastIdx;
@@ -69,7 +70,11 @@ const App = () => {
   };
 
   const operationClick = (key: string) => {
-    if (operation) {
+    const symbol = key == "multiply" ? "×" : buttonInfo[key];
+    if (!formula) setFormula("0" + symbol);
+    else if (formula.includes("="))
+      setFormula((prev) => prev.slice(prev.indexOf("=") + 1) + symbol);
+    else if (operation) {
       if (key == "subtract") {
         setFormula(
           (prev) =>
@@ -77,57 +82,66 @@ const App = () => {
             (prev[prev.length - 1] == ")" ? "" : "(-)")
         );
         setOutput((prev) => (prev == "-0" ? "0" : "-0"));
-      } else
-        setFormula((prev) => prev.slice(0, lastOpIdx(prev)) + buttonInfo[key]);
-    } else setFormula((prev) => prev + buttonInfo[key]);
+      } else setFormula((prev) => prev.slice(0, lastOpIdx(prev)) + symbol);
+    } else setFormula((prev) => prev + symbol);
     setOperation(key);
   };
 
   const evaluate = () => {
-    const output = eval(formula.replace("x", "*"));
-    setFormula(output);
+    if (formula.includes("=")) return;
+    let output = eval(formula.replace("×", "*"));
+    output = Math.round((output + Number.EPSILON) * 100000000) / 100000000;
+    setFormula((prev) => prev + "=" + output);
     setOutput(output);
   };
 
   useEffect(() => {
     const clearBtn = document.getElementById("clear") as HTMLButtonElement;
-    clearBtn.innerHTML = ["0", "-0"].includes(output) ? "AC" : "C";
+    const clearAll = ["0", "-0"].includes(output) || formula.includes("=");
+    clearBtn.innerHTML = clearAll ? "AC" : "C";
   }, [output]);
 
   return (
-    <>
-      <div className="calculator">
-        <div className="screen">
-          <div className="formula">{formula}</div>
-          <div className="output" id="display">
-            {output}
-          </div>
-        </div>
-        <div className="buttons">
-          {Object.entries(buttonInfo).map(([key, value]) => {
-            let click;
-            let className = "button";
-
-            if (!isNaN(+value) || value == ".") click = () => numClick(value);
-            else if (key == "clear") click = () => clearClick(["0", "-0"].includes(output));
-            else if (key == "delete") click = deleteClick;
-            else if (key == "sign") click = signClick;
-            else if (["add", "subtract", "multiply", "divide"].includes(key))
-              click = () => operationClick(key);
-            else if (key == "equals") click = evaluate;
-
-            if (key == operation) className += " selected";
-            return (
-              <button className={className} id={key} onClick={click} key={key}>
-                {value}
-              </button>
-            );
-          })}
+    <div className="calculator">
+      <div className="screen">
+        <div className="formula">{formula}</div>
+        <div className="output" id="display">
+          {output}
         </div>
       </div>
-      <div className="author">By Issac Roy</div>
-    </>
+      <div className="buttons">
+        {Object.entries(buttonInfo).map(([key, value]) => {
+          let click;
+          let className = "button";
+          const operations = ["add", "subtract", "multiply", "divide"];
+          const clearAll =
+            ["0", "-0"].includes(output) || formula.includes("=");
+
+          if (!isNaN(+value) || value == ".") click = () => numClick(value);
+          else if (operations.includes(key)) click = () => operationClick(key);
+          else if (key == "sign") click = signClick;
+          else if (key == "delete") click = deleteClick;
+          else if (key == "clear") click = () => clearClick(clearAll);
+          else if (key == "equals") {
+            click = evaluate;
+            className += " equals";
+          }
+
+          if (key == operation) className += " selected";
+          else if ([...operations, "equals"].includes(key))
+            className += " operation";
+          else if (["clear", "delete", "percent"].includes(key))
+            className += " action";
+
+          return (
+            <button className={className} id={key} onClick={click} key={key}>
+              {value}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
-export default App;
+export default Calculator;

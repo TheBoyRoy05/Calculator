@@ -1,6 +1,6 @@
 const buttonInfo: { [key: string]: string } = {
   "clear": "AC",
-  "sign": "+/-",
+  "delete": "DEL",
   "percent": "%",
   "divide": "/",
   "seven": "7",
@@ -17,7 +17,7 @@ const buttonInfo: { [key: string]: string } = {
   "add": "+",
   "decimal": ".",
   "zero": "0",
-  "delete": "DEL",
+  "sign": "+/-",
   "equals": "="
 }
 
