@@ -104,7 +104,7 @@ const Calculator = () => {
 
   const evaluate = () => {
     if (formula.includes("=")) return;
-    let output = eval(formula.replace("×", "*"));
+    let output = eval(formula.replace(/×/g, "*"));
     output = Math.round((output + Number.EPSILON) * 100000000) / 100000000;
     setFormula((prev) => (prev ? prev + "=" + output : "0=0"));
     setOutput(output ? output : "0");
