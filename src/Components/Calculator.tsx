@@ -18,7 +18,11 @@ const Calculator = () => {
   };
 
   const numClick = (str: string) => {
-    if (operation) {
+    if (formula.includes("=")) {
+      setFormula("")
+      setOutput("0")
+    } else if (operation) {
+      if (str == "0") return;
       setOperation("");
       setOutput("0");
     }
@@ -36,17 +40,22 @@ const Calculator = () => {
     setFormula(setter);
   };
 
-  const clearClick = (all: boolean) => {
+  const clearClick = () => {
+    const clearAll = ["0", "-0"].includes(output) || formula.includes("=");
     setOutput("0");
     setOperation("");
     setFormula((prev) => {
-      if (all) return "";
+      if (clearAll) return "";
       else if (lastOpIdx(prev) == -1) return "";
       else return prev.slice(0, lastOpIdx(prev) + 1);
     });
   };
 
   const deleteClick = () => {
+    if (formula.includes("=")) {
+      clearClick();
+      return;
+    }
     setOutput((prev: string) => (prev.length == 1 ? "0" : prev.slice(0, -1)));
     setFormula((prev) => {
       if (prev[prev.length - 1] == ")") {
@@ -67,6 +76,12 @@ const Calculator = () => {
       );
     });
     setOutput((prev) => (prev[0] == "-" ? prev.slice(1) : "-" + prev));
+  };
+
+  const percentClick = () => {
+    const res = "" + eval(`${output}/100`);
+    setFormula((prev) => prev.slice(0, lastOpIdx(prev) + 1) + res);
+    setOutput(res);
   };
 
   const operationClick = (key: string) => {
@@ -91,9 +106,34 @@ const Calculator = () => {
     if (formula.includes("=")) return;
     let output = eval(formula.replace("×", "*"));
     output = Math.round((output + Number.EPSILON) * 100000000) / 100000000;
-    setFormula((prev) => prev + "=" + output);
-    setOutput(output);
+    setFormula((prev) => (prev ? prev + "=" + output : "0=0"));
+    setOutput(output ? output : "0");
   };
+
+  useEffect(() => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!isNaN(+e.key) || e.key == ".") numClick(e.key);
+      else if (e.key == "Backspace") e.ctrlKey ? clearClick() : deleteClick();
+      else if (e.key == "+") operationClick("add");
+      else if (e.key == "-") operationClick("subtract");
+      else if (e.key == "*") operationClick("multiply");
+      else if (e.key == "/") operationClick("divide");
+      else if (e.key == "%") percentClick();
+      else if (e.key == "Enter") evaluate();
+    };
+
+    document.addEventListener("keyup", handleKeyUp);
+    return () => {
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [
+    numClick,
+    clearClick,
+    deleteClick,
+    operationClick,
+    percentClick,
+    evaluate,
+  ]);
 
   useEffect(() => {
     const clearBtn = document.getElementById("clear") as HTMLButtonElement;
@@ -114,14 +154,13 @@ const Calculator = () => {
           let click;
           let className = "button";
           const operations = ["add", "subtract", "multiply", "divide"];
-          const clearAll =
-            ["0", "-0"].includes(output) || formula.includes("=");
 
           if (!isNaN(+value) || value == ".") click = () => numClick(value);
           else if (operations.includes(key)) click = () => operationClick(key);
+          else if (key == "percent") click = percentClick;
           else if (key == "sign") click = signClick;
           else if (key == "delete") click = deleteClick;
-          else if (key == "clear") click = () => clearClick(clearAll);
+          else if (key == "clear") click = clearClick;
           else if (key == "equals") {
             click = evaluate;
             className += " equals";
